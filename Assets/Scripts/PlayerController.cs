@@ -14,7 +14,7 @@ public class PlayerController : MonoBehaviour
 
     public bool gameOver = false;
 
-    public bool hasPowerUp;
+    public int powerupTime;
 
     public float powerupStrength = 15.0f;
 
@@ -23,6 +23,7 @@ public class PlayerController : MonoBehaviour
     {
         playerRb = GetComponent<Rigidbody>();
         focalPoint = GameObject.Find("Focal Point");
+        StartCoroutine(PowerupCountdownRoutine());
     }
 
     // Update is called once per frame
@@ -46,28 +47,36 @@ public class PlayerController : MonoBehaviour
     {
         if (other.CompareTag("PowerUp"))
         {
-            hasPowerUp = true;
+            powerupTime += 7;
             Destroy(other.gameObject);
-            StartCoroutine(PowerupCountdownRoutine());
             powerupIndicator.gameObject.SetActive(true);
         }
     }
 
     IEnumerator PowerupCountdownRoutine()
     {
-        yield return new WaitForSeconds(7);
-        hasPowerUp = false;
-        powerupIndicator.gameObject.SetActive(false);
+        while (true)
+        {
+            if (powerupTime > 0)
+            {
+                powerupTime--;
+                if (powerupTime == 0)
+                {
+                    powerupIndicator.gameObject.SetActive(false);
+                }
+            }
+            yield return new WaitForSeconds(1);
+        }
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if (hasPowerUp && collision.gameObject.CompareTag("Enemy"))
+        if (powerupTime > 0 && collision.gameObject.CompareTag("Enemy"))
         {
             Rigidbody enemyRigidbody = collision.gameObject.GetComponent<Rigidbody>();
             Vector3 awayFromPlayer = collision.gameObject.transform.position - transform.position;
-            
-            Debug.Log($"Collided with {collision.gameObject.name} with powerup set to {hasPowerUp}");
+
+            Debug.Log($"Collided with {collision.gameObject.name} with remaining powerup time: {powerupTime} s.");
             enemyRigidbody.AddForce(awayFromPlayer * powerupStrength, ForceMode.Impulse);
         }
     }
